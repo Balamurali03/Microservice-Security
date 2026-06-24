@@ -1,0 +1,95 @@
+server:
+  port: 8083
+
+spring:
+
+  application:
+    name: DATA-SERVICE
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/data_service?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC
+    username: rudra
+    password: root
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+
+    show-sql: true
+
+    properties:
+      hibernate:
+        format_sql: true
+
+  batch:
+    jdbc:
+      initialize-schema: always
+
+    job:
+      enabled: false
+
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 100MB
+
+  elasticsearch:
+    uris:
+      - http://localhost:9200
+
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: yourmail@gmail.com
+    password: your-app-password
+
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+jwt:
+  secret: MySuperSecretKeyForJwtGenerationMustBeLongEnough123456
+  expiration: 86400000
+
+eureka:
+
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+
+    service-url:
+      defaultZone: http://localhost:8761/eureka
+
+  instance:
+    prefer-ip-address: true
+    instance-id: ${spring.application.name}:${server.port}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    org.springframework.batch: INFO
+    org.springframework.data.elasticsearch: INFO
+    com.project.bmr: DEBUG
+
+app:
+  scheduler:
+    weekly-report-cron: "0 0 9 ? * MON,FRI"
+
+  excel:
+    chunk-size: 1000
+
+  mail:
+    report-subject: Weekly Data Report

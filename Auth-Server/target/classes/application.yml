@@ -31,6 +31,9 @@ eureka:
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka
+  instance:
+    prefer-ip-address: true
+    hostname: localhost
 
 management:
   endpoints:
@@ -40,5 +43,5 @@ management:
 
 twilio:
   account-sid: AC4183c8f6799659f16d7260315f9579d2
-  auth-token: 7b831b70126ae7c939ecb54273fdbc1e
+  auth-token: 06a3b42119d14aa14c6654b574888f47
   phone-number: +1 260 468 4742

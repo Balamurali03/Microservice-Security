@@ -11,8 +11,8 @@ public class CreateProfileRequest {
 
     private String mobile;
 
-    private String name;
-
     private String role;
+    
+    private String name;
 
 }

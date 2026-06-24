@@ -7,6 +7,8 @@ import lombok.*;
 
 import java.time.LocalDateTime;
 
+import com.project.bmr.User_Service.enums.Role;
+
 @Entity
 @Table(
         name = "users",
@@ -38,8 +40,12 @@ public class User {
     @Column(nullable = false, unique = true)
     private String mobile;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String role;
+    private Role role;
+    
+    @Column(nullable = false)
+    private String name;
 
     private LocalDateTime createdAt;
 }

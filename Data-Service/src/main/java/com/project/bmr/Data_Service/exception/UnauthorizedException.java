@@ -1,0 +1,12 @@
+package com.project.bmr.Data_Service.exception;
+
+
+public class UnauthorizedException
+        extends RuntimeException {
+
+    public UnauthorizedException(
+            String message
+    ) {
+        super(message);
+    }
+}

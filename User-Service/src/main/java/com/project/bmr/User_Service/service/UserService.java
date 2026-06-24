@@ -2,12 +2,15 @@ package com.project.bmr.User_Service.service;
 
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import org.springframework.stereotype.Service;
 
+import com.project.bmr.User_Service.dto.AdminResponse;
 import com.project.bmr.User_Service.dto.CreateProfileRequest;
 import com.project.bmr.User_Service.dto.UserResponse;
 import com.project.bmr.User_Service.entity.User;
+import com.project.bmr.User_Service.enums.Role;
 import com.project.bmr.User_Service.exception.UserNotFoundException;
 import com.project.bmr.User_Service.repository.UserRepository;
 
@@ -38,9 +41,9 @@ public class UserService {
 
         User user = User.builder()
                 .email(request.getEmail())
-                //.name(request.getName())
                 .mobile(request.getMobile())
-                .role("USER")
+                .role(Role.valueOf(request.getRole()))
+                .name(request.getName())
                 .createdAt(LocalDateTime.now())
                 .build();
 
@@ -78,8 +81,22 @@ public class UserService {
                 .id(user.getId())
                 .email(user.getEmail())
                 .mobile(user.getMobile())
-                //.name(user.getName())
-                .role(user.getRole())
+                .role(user.getRole().name())
                 .build();
+    }
+    
+    public List<AdminResponse> getAdmins() {
+
+        return userRepository
+                .findByRole(Role.ADMIN)
+                .stream()
+                .map(user ->
+                        AdminResponse.builder()
+                                .id(user.getId())
+                                .email(user.getEmail())
+                                .name(user.getName())
+                                .build()
+                )
+                .toList();
     }
 }
