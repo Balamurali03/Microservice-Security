@@ -1,10 +1,13 @@
 package com.project.bmr.Data_Service.repository;
 
 
+import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.elasticsearch.annotations.Query;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import com.project.bmr.Data_Service.dto.CategoryCount;
 import com.project.bmr.Data_Service.entity.ProductData;
 
 
@@ -21,4 +24,12 @@ public interface ProductRepository
     long countByQuantityLessThan(
             Integer quantity
     );
+    
+    @Query("""
+    		SELECT p.category as category,
+    		COUNT(p) as total
+    		FROM ProductData p
+    		GROUP BY p.category
+    		""")
+    		List<CategoryCount> categoryStats();
 }
