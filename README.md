@@ -1,221 +1,238 @@
-# OTP Authentication Microservices System
+# Enterprise Product Management & OTP Authentication Platform
 
 ## Overview
 
-A production-grade Authentication System built using Spring Boot Microservices architecture.
+A production-grade microservices platform built using Spring Boot 3.5.15 and Java 21.
 
-This project provides passwordless authentication using:
+The platform provides:
 
-- Email OTP (Gmail SMTP)
-- Mobile OTP (Twilio SMS)
-- JWT Authentication
-- Redis OTP Storage with TTL
-- Eureka Service Discovery
-- Spring Cloud Gateway
-- Factory Design Pattern
+* Passwordless Authentication
+* Email OTP Login (Gmail SMTP)
+* Mobile OTP Login (Twilio SMS)
+* JWT Authentication
+* Redis OTP Storage with TTL
+* API Gateway Security
+* Eureka Service Discovery
+* User Profile Management
+* Product Management
+* Excel Bulk Upload
+* Spring Batch Processing
+* Elasticsearch Search
+* Weekly Admin Reports
+* Scheduled Email Notifications
 
 ---
 
-## Architecture
+# System Architecture
 
 ```text
-                        +------------------+
-                        |      Client      |
-                        +--------+---------+
-                                 |
-                                 v
-                      +---------------------+
-                      |     API Gateway     |
-                      +----------+----------+
-                                 |
-                +----------------+----------------+
-                |                                 |
-                v                                 v
-       +----------------+              +----------------+
-       |  Auth Service  |              |  User Service  |
-       +-------+--------+              +--------+-------+
-               |                                |
-               v                                v
-       +---------------+                +---------------+
-       |     Redis     |                |     MySQL     |
-       +---------------+                +---------------+
 
-               |
-               v
-     +----------------------+
-     | Gmail SMTP / Twilio  |
-     +----------------------+
+                                    ┌─────────────────────┐
+                                    │      CLIENT         │
+                                    └──────────┬──────────┘
+                                               │
+                                               ▼
+                                ┌───────────────────────────┐
+                                │       API GATEWAY         │
+                                │         :8080             │
+                                └──────────┬────────────────┘
+                                           │
+                     ┌─────────────────────┼─────────────────────┐
+                     │                     │                     │
+                     ▼                     ▼                     ▼
 
-All Services Register With Eureka Discovery Server
+       ┌──────────────────┐   ┌──────────────────┐   ┌──────────────────┐
+       │   AUTH SERVICE   │   │   USER SERVICE   │   │   DATA SERVICE   │
+       │      :8081       │   │      :8082       │   │      :8083       │
+       └────────┬─────────┘   └────────┬─────────┘   └────────┬─────────┘
+                │                      │                      │
+                ▼                      ▼                      ▼
+
+        ┌─────────────┐         ┌─────────────┐       ┌─────────────┐
+        │    Redis    │         │    MySQL    │       │    MySQL    │
+        │ OTP Storage │         │ User Data   │       │ Product Data│
+        └─────────────┘         └─────────────┘       └──────┬──────┘
+                                                             │
+                                                             ▼
+
+                                                   ┌────────────────┐
+                                                   │ Elasticsearch  │
+                                                   │ Product Search │
+                                                   └────────────────┘
+
+
+                ┌────────────────────┐
+                │ Gmail SMTP/Twilio  │
+                └─────────┬──────────┘
+                          │
+                          ▼
+
+                  Notifications
+
+All services are registered with Eureka Discovery Server (:8761)
+
 ```
 
 ---
 
-## Microservices
+# Services
 
-### Discovery Server
+## Eureka Discovery Server
 
-**Responsibilities**
+### Responsibilities
 
-- Service Registration
-- Service Discovery
-- Centralized Registry
+* Service Registration
+* Service Discovery
+* Health Monitoring
 
-**Port**
+### Port
 
 ```properties
 8761
 ```
 
-### API Gateway
+---
 
-**Responsibilities**
+## API Gateway
 
-- Single Entry Point
-- JWT Validation
-- Request Routing
-- Security Enforcement
+### Responsibilities
 
-**Port**
+* Single Entry Point
+* Route Management
+* JWT Validation
+* Authorization
+* Header Propagation
+
+### Port
 
 ```properties
 8080
 ```
 
-### Auth Service
+### Routes
 
-**Responsibilities**
+```text
+/auth/**      -> AUTH-SERVICE
+/users/**     -> USER-SERVICE
+/products/**  -> DATA-SERVICE
+/reports/**   -> DATA-SERVICE
+```
 
-- Generate OTP
-- Store OTP in Redis
-- Send Email OTP
-- Send SMS OTP
-- Verify OTP
-- Generate JWT
-- Existing User Verification
+### JWT Flow
 
-**Port**
+```text
+Client
+  |
+JWT Token
+  |
+API Gateway
+  |
+Validate JWT
+  |
+Extract Claims
+  |
+Add Headers
+
+X-USER-EMAIL
+X-USER-ROLE
+
+  |
+Forward Request
+```
+
+---
+
+## Auth Service
+
+### Responsibilities
+
+* Generate OTP
+* Store OTP in Redis
+* Send Email OTP
+* Send Mobile OTP
+* Verify OTP
+* Generate JWT
+* Check Existing User
+
+### Port
 
 ```properties
 8081
 ```
 
-### User Service
-
-**Responsibilities**
-
-- Create User Profile
-- Get User By Email
-- Get User By Mobile
-- User Management
-
-**Port**
-
-```properties
-8082
-```
-
 ---
 
-## Tech Stack
+### Authentication Flow
 
-### Backend
-
-- Java 21
-- Spring Boot 3.5.15
-- Spring Security
-- Spring Cloud Gateway
-- Spring Cloud OpenFeign
-- Spring Data JPA
-- Lombok
-
-### Database
-
-- MySQL
-
-### Cache
-
-- Redis
-
-### Authentication
-
-- JWT
-
-### Messaging
-
-- Gmail SMTP
-- Twilio SMS
-
-### Containerization
-
-- Docker
-
----
-
-## Authentication Flow
-
-### Existing User Flow
+#### Existing User
 
 ```text
 Email/Mobile
-     |
+      |
 Request OTP
-     |
+      |
+Redis Store OTP
+      |
+Send OTP
+      |
 Verify OTP
-     |
-Check User Service
-     |
-User Exists
-     |
+      |
+Call USER-SERVICE
+      |
+User Exists ?
+      |
+YES
+      |
 Generate JWT
-     |
+      |
 Dashboard
 ```
 
-### New User Flow
+#### New User
 
 ```text
 Email/Mobile
-     |
+      |
 Request OTP
-     |
+      |
 Verify OTP
-     |
-Check User Service
-     |
-User Not Found
-     |
+      |
+Call USER-SERVICE
+      |
+User Exists ?
+      |
+NO
+      |
 Create Profile
-     |
+      |
 Login Again
 ```
 
 ---
 
-## Factory Design Pattern
+### OTP Channels
 
-The Auth Service uses the Factory Pattern to support multiple OTP delivery channels.
+#### Email OTP
 
-### Current Implementations
+```text
+Gmail SMTP
+```
 
-- Email OTP Sender
-- Mobile OTP Sender
+#### Mobile OTP
 
-### Future Extensions
-
-- WhatsApp OTP
-- Push Notifications
-- Voice OTP
-
-No changes to existing business logic are required when introducing new OTP channels.
+```text
+Twilio SMS
+```
 
 ---
 
-## Redis OTP Storage
+### Redis OTP Storage
 
-OTPs are stored in Redis with a TTL of 60 seconds.
+```text
+TTL = 60 Seconds
+```
 
-### Example Keys
+Example Keys:
 
 ```text
 OTP:EMAIL:user@gmail.com
@@ -223,273 +240,520 @@ OTP:EMAIL:user@gmail.com
 OTP:MOBILE:+919876543210
 ```
 
-### Benefits
+---
 
-- Automatic Expiration
-- Fast Access
-- Reduced Database Load
+### Factory Design Pattern
+
+```text
+
+                 NotificationService
+                           |
+        ------------------------------------
+        |                                  |
+        ▼                                  ▼
+
+ EmailNotificationService      SmsNotificationService
+       (SMTP)                        (Twilio)
+
+```
+
+Future Extensions:
+
+* WhatsApp OTP
+* Push Notifications
+* Voice OTP
 
 ---
 
-## API Endpoints
+## User Service
 
-### Request OTP
+### Responsibilities
 
-**Endpoint**
+* Create Profile
+* Update Profile
+* Get User By Email
+* Get User By Mobile
+* Manage User Roles
+* Admin Retrieval
+
+### Port
+
+```properties
+8082
+```
+
+---
+
+### Roles
+
+```java
+ADMIN
+USER
+```
+
+Stored as:
+
+```java
+@Enumerated(EnumType.STRING)
+private Role role;
+```
+
+---
+
+## Data Service
+
+### Responsibilities
+
+* Product CRUD
+* Bulk Upload
+* Excel Processing
+* Search Products
+* Weekly Reports
+* Scheduler Jobs
+
+### Port
+
+```properties
+8083
+```
+
+---
+
+# Product Management Module
+
+### Admin Features
+
+```text
+Create Product
+Update Product
+Delete Product
+Bulk Upload Products
+View Products
+```
+
+### User Features
+
+```text
+View Products
+Search Products
+```
+
+---
+
+# Excel Bulk Upload Module
+
+### Technology
+
+* Spring Batch
+* Apache POI
+
+### Flow
+
+```text
+
+Excel File
+     |
+Upload API
+     |
+Job Launcher
+     |
+Spring Batch Job
+     |
+Reader
+     |
+Processor
+     |
+Writer
+     |
+MySQL
+     |
+Elasticsearch
+
+```
+
+### Chunk Processing
+
+```text
+Chunk Size = 100
+```
+
+Benefits:
+
+* Handles Large Files
+* Better Memory Usage
+* Faster Processing
+
+---
+
+# Elasticsearch Search Module
+
+### Features
+
+```text
+Keyword Search
+Category Search
+Pagination
+Sorting
+Fuzzy Search
+```
+
+### Flow
+
+```text
+
+Client
+   |
+Search Request
+   |
+DATA-SERVICE
+   |
+Elasticsearch
+   |
+Results
+
+```
+
+---
+
+# Weekly Reporting Module
+
+### Schedule
+
+```text
+Every Monday - 09:00 AM
+
+Every Friday - 09:00 AM
+```
+
+### Process
+
+```text
+
+Scheduler
+    |
+Fetch Product Statistics
+    |
+Get Admin Users
+    |
+Generate Report
+    |
+Send Email
+    |
+All Admins
+
+```
+
+### Report Includes
+
+```text
+Total Product Count
+Category Wise Count
+Low Stock Products
+```
+
+---
+
+# Authentication APIs
+
+## Request OTP
 
 ```http
 POST /auth/request-otp
 ```
 
-**Email Request**
+Email
 
 ```json
 {
-  "otpType": "EMAIL",
-  "destination": "user@gmail.com"
+  "otpType":"EMAIL",
+  "destination":"user@gmail.com"
 }
 ```
 
-**Mobile Request**
+Mobile
 
 ```json
 {
-  "otpType": "MOBILE",
-  "destination": "+919876543210"
-}
-```
-
-**Response**
-
-```json
-{
-  "success": true,
-  "message": "OTP Sent Successfully"
+  "otpType":"MOBILE",
+  "destination":"+919876543210"
 }
 ```
 
 ---
 
-### Verify OTP
-
-**Endpoint**
+## Verify OTP
 
 ```http
 POST /auth/verify-otp
 ```
 
-**Request**
-
 ```json
 {
-  "otpType": "EMAIL",
-  "destination": "user@gmail.com",
-  "otp": "123456"
-}
-```
-
-**Existing User Response**
-
-```json
-{
-  "existingUser": true,
-  "token": "jwt-token",
-  "email": "user@gmail.com",
-  "message": "Login Successful"
-}
-```
-
-**New User Response**
-
-```json
-{
-  "existingUser": false,
-  "message": "Profile not found"
+  "otpType":"EMAIL",
+  "destination":"user@gmail.com",
+  "otp":"123456"
 }
 ```
 
 ---
 
-### Create Profile
+# User APIs
 
-**Endpoint**
+## Create Profile
 
 ```http
 POST /users/profile/create
 ```
 
-**Request**
+## Update Profile
 
-```json
-{
-  "name": "John Doe",
-  "email": "john@gmail.com",
-  "mobile": "+919876543210",
-  "city": "Bangalore"
-}
+```http
+PUT /users/profile/{id}
 ```
 
-**Response**
+## Get User By Email
 
-```json
-{
-  "success": true,
-  "message": "Profile Created Successfully"
-}
+```http
+GET /users/email/{email}
 ```
 
 ---
 
-## Running Redis
+# Product APIs
 
-### Pull Redis Image
+## Create Product
 
-```bash
-docker pull redis:latest
+```http
+POST /products
 ```
 
-### Run Redis Container
+## Update Product
+
+```http
+PUT /products/{id}
+```
+
+## Delete Product
+
+```http
+DELETE /products/{id}
+```
+
+## Get Product
+
+```http
+GET /products/{id}
+```
+
+## Search Product
+
+```http
+GET /products/search?keyword=laptop
+```
+
+## Upload Excel
+
+```http
+POST /products/upload
+```
+
+Multipart Form Data:
+
+```text
+file=products.xlsx
+```
+
+---
+
+# Databases
+
+## User Database
+
+```text
+MySQL
+```
+
+Stores:
+
+```text
+Users
+Profiles
+Roles
+```
+
+---
+
+## Product Database
+
+```text
+MySQL
+```
+
+Stores:
+
+```text
+Products
+Inventory
+Product Metadata
+```
+
+---
+
+## Search Engine
+
+```text
+Elasticsearch
+```
+
+Stores:
+
+```text
+Indexed Product Documents
+```
+
+---
+
+# External Integrations
+
+## Redis
+
+```text
+OTP Storage
+```
+
+## Twilio
+
+```text
+SMS OTP
+```
+
+## Gmail SMTP
+
+```text
+Email OTP
+Weekly Reports
+Notifications
+```
+
+---
+
+# Running Infrastructure
+
+## Redis
 
 ```bash
 docker run -d --name redis-server -p 6379:6379 redis:latest
 ```
 
-### Verify Container
-
-```bash
-docker ps
-```
-
-Expected Output:
+## MySQL
 
 ```text
-0.0.0.0:6379->6379/tcp
+localhost:3306
+```
+
+## Elasticsearch
+
+```text
+localhost:9200
 ```
 
 ---
 
-## Configuration
+# Startup Order
 
-### Gmail SMTP
+```text
+1. Eureka Server
 
-```yaml
-spring:
-  mail:
-    host: smtp.gmail.com
-    port: 587
-    username: your-email@gmail.com
-    password: your-app-password
+2. Redis
 
-    properties:
-      mail:
-        smtp:
-          auth: true
-          starttls:
-            enable: true
-```
+3. MySQL
 
-### Twilio
+4. Elasticsearch
 
-```yaml
-twilio:
-  account-sid: YOUR_ACCOUNT_SID
-  auth-token: YOUR_AUTH_TOKEN
-  phone-number: YOUR_TWILIO_PHONE_NUMBER
-```
+5. API Gateway
 
-### Redis
+6. Auth Service
 
-```yaml
-spring:
-  data:
-    redis:
-      host: localhost
-      port: 6379
+7. User Service
+
+8. Data Service
 ```
 
 ---
 
-## Running The Project
+# Design Patterns Used
 
-### Start Discovery Server
-
-```bash
-mvn spring-boot:run
-```
-
-### Start Auth Service
-
-```bash
-mvn spring-boot:run
-```
-
-### Start User Service
-
-```bash
-mvn spring-boot:run
-```
-
-### Start API Gateway
-
-```bash
-mvn spring-boot:run
-```
+* Factory Pattern
+* Builder Pattern
+* Dependency Injection
+* Gateway Pattern
+* Service Discovery Pattern
+* Repository Pattern
+* Strategy Ready Architecture
 
 ---
 
-## Future Enhancements
+# Key Concepts Demonstrated
 
-- Refresh Token Support
-- Role-Based Access Control (RBAC)
-- API Rate Limiting
-- Kafka Integration
-- Centralized Logging
-- Distributed Tracing
-- Kubernetes Deployment
-- CI/CD Pipeline
-- Prometheus Monitoring
-- Grafana Dashboards
-- WhatsApp OTP Support
-
----
-
-## Design Patterns Used
-
-- Factory Pattern
-- Dependency Injection
-- API Gateway Pattern
-- Service Discovery Pattern
+* Microservices Architecture
+* JWT Authentication
+* Redis Caching
+* OTP Authentication
+* Spring Batch
+* Elasticsearch
+* API Gateway
+* Eureka Discovery
+* Feign Clients
+* Scheduler Jobs
+* Docker Integration
+* Distributed Systems
 
 ---
 
-## Key Concepts Demonstrated
+# Future Enhancements
 
-- Microservices Architecture
-- JWT Authentication
-- Redis Caching
-- OTP Authentication
-- Docker Integration
-- Feign Client Communication
-- Service Discovery
-- API Gateway
-- Distributed Systems
+## Phase 6
+
+* Kafka Integration
+* Audit Logging
+* Dead Letter Queue
+* Retry Mechanism
+* Distributed Tracing
+* Zipkin
+* Micrometer
+
+## Phase 7
+
+* Docker Compose
+* Kubernetes
+* Jenkins CI/CD
+* Prometheus
+* Grafana
+* Centralized Logging
 
 ---
 
-## Author
+# Author
 
 **Balamurali R**
 
 Java Backend Developer
 
-Built with:
+Built With
 
-- Java 21
-- Spring Boot 3.5.15
-- Redis
-- MySQL
-- Twilio
-- Gmail SMTP
-- Eureka
-- JWT
-- Docker
+* Java 21
+* Spring Boot 3.5.15
+* Spring Cloud
+* MySQL
+* Redis
+* Elasticsearch
+* Spring Batch
+* JWT
+* Twilio
+* Gmail SMTP
+* Docker
+* Eureka Discovery
+* API Gateway
+
+```
+```
