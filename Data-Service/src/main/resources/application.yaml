@@ -8,8 +8,8 @@ spring:
 
   datasource:
     url: jdbc:mysql://localhost:3306/data_service?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC
-    username: rudra
-    password: root
+    username: root
+    password: rudra
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   jpa:
@@ -67,6 +67,7 @@ eureka:
   instance:
     prefer-ip-address: true
     instance-id: ${spring.application.name}:${server.port}
+    hostname: localhost
 
 management:
   endpoints:

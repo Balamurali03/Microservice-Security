@@ -20,6 +20,11 @@ spring:
           predicates:
             - Path=/users/**
 
+        - id: data-service
+          uri: lb://DATA-SERVICE
+          predicates:
+             - Path=/products/**,/reports/**
+
 jwt:
   secret: mySecretKeymySecretKeymySecretKeymySecretKey
 
@@ -29,4 +34,5 @@ eureka:
       defaultZone: http://localhost:8761/eureka
   instance:
     prefer-ip-address: true
+    instance-id: ${spring.application.name}:${server.port}
     hostname: localhost
